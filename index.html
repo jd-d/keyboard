@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual QWERTY Keyboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>Virtual QWERTY Keyboard</h1>
+      <p class="subtitle">Tap the keys to compose your message.</p>
+    </header>
+    <section class="display-container">
+      <textarea id="textDisplay" class="text-display" rows="2" readonly placeholder="Start typing with the keyboard below"></textarea>
+      <button id="copyButton" class="copy-button" type="button">Copy text</button>
+      <p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="keyboard" aria-label="Virtual keyboard">
+      <!-- Keys will be rendered here by JavaScript -->
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
