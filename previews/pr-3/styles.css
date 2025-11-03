@@ -105,6 +105,36 @@ body {
   transform: translateY(1px);
 }
 
+.auto-paste-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  flex-wrap: wrap;
+}
+
+.auto-paste-controls label {
+  font-weight: 600;
+}
+
+.auto-paste-select {
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(255, 255, 255, 0.85);
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 8rem;
+}
+
+.auto-paste-select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
 .copy-status {
   min-height: 1.25rem;
   margin: 0;
@@ -218,5 +248,9 @@ body {
 
   .key.backspace {
     min-width: 4.5rem;
+  }
+
+  .auto-paste-controls {
+    justify-content: center;
   }
 }

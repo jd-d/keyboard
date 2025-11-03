@@ -2,6 +2,7 @@ const textDisplay = document.getElementById('textDisplay');
 const keyboardContainer = document.querySelector('.keyboard');
 const copyButton = document.getElementById('copyButton');
 const copyStatus = document.getElementById('copyStatus');
+const autoPasteDelaySelect = document.getElementById('autoPasteDelay');
 
 const keyboardLayout = [
   [
@@ -79,7 +80,8 @@ const keyboardLayout = [
 const keyElements = new Map();
 let shiftActive = false;
 let capsActive = false;
-let copyReminderTimeoutId;
+let autoPasteTimeoutId;
+let lastCopiedText = '';
 
 function renderKeyboard() {
   keyboardContainer.innerHTML = '';
@@ -283,6 +285,7 @@ copyButton.addEventListener('click', async () => {
 
   try {
     await navigator.clipboard.writeText(text);
+    lastCopiedText = text;
     showCopyFeedback(true);
   } catch (error) {
     legacyCopy(text);
@@ -299,6 +302,9 @@ function legacyCopy(text) {
 
   try {
     const success = document.execCommand('copy');
+    if (success) {
+      lastCopiedText = text;
+    }
     showCopyFeedback(success);
   } catch (error) {
     showCopyFeedback(false);
@@ -311,21 +317,72 @@ function legacyCopy(text) {
   textDisplay.blur();
 }
 
-function showCopyFeedback(success) {
-  window.clearTimeout(copyReminderTimeoutId);
-
-  if (success) {
-    copyStatus.textContent = 'Copied! We will remind you to paste in 10 seconds.';
-    schedulePasteReminder();
-  } else {
-    copyStatus.textContent = 'Your browser blocked automatic copy. Use Ctrl+C / Cmd+C.';
+function getSelectedDelaySeconds() {
+  const fallback = 10;
+  if (!autoPasteDelaySelect) {
+    return fallback;
   }
+
+  const parsed = parseInt(autoPasteDelaySelect.value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
 }
 
-function schedulePasteReminder() {
-  copyReminderTimeoutId = window.setTimeout(() => {
-    copyStatus.textContent = 'Tip: Paste the copied text where you need it (Ctrl+V / Cmd+V).';
-  }, 10000);
+function showCopyFeedback(success) {
+  window.clearTimeout(autoPasteTimeoutId);
+
+  if (!success) {
+    copyStatus.textContent = 'Your browser blocked automatic copy. Use Ctrl+C / Cmd+C.';
+    return;
+  }
+
+  const delaySeconds = getSelectedDelaySeconds();
+  copyStatus.textContent = `Copied! We'll attempt to auto paste in ${delaySeconds} seconds (clipboard permission required).`;
+  scheduleAutoPaste(delaySeconds);
+}
+
+function scheduleAutoPaste(delaySeconds) {
+  window.clearTimeout(autoPasteTimeoutId);
+
+  if (!lastCopiedText) {
+    return;
+  }
+
+  if (!Number.isFinite(delaySeconds) || delaySeconds <= 0) {
+    return;
+  }
+
+  autoPasteTimeoutId = window.setTimeout(async () => {
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
+        copyStatus.textContent = 'Auto paste is unavailable because clipboard read access is not supported here. Paste manually with Ctrl+V / Cmd+V.';
+        return;
+      }
+
+      const clipboardText = await navigator.clipboard.readText();
+
+      if (!clipboardText) {
+        copyStatus.textContent = 'Auto paste ran, but the clipboard was empty. Paste manually if needed.';
+        return;
+      }
+
+      insertCharacter(clipboardText);
+      try {
+        textDisplay.selectionStart = textDisplay.selectionEnd = textDisplay.value.length;
+      } catch (selectionError) {
+        // Ignore selection adjustment failures on read-only fields.
+      }
+      copyStatus.textContent = 'Auto paste inserted the copied text above. Allow clipboard access if your browser prompts you.';
+    } catch (error) {
+      console.error('Auto paste failed', error);
+      copyStatus.textContent = 'Auto paste was blocked by browser security settings. Paste manually with Ctrl+V / Cmd+V.';
+    } finally {
+      autoPasteTimeoutId = undefined;
+    }
+  }, delaySeconds * 1000);
 }
 
 renderKeyboard();

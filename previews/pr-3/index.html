@@ -15,6 +15,14 @@
     <section class="display-container">
       <textarea id="textDisplay" class="text-display" rows="2" readonly placeholder="Start typing with the keyboard below"></textarea>
       <button id="copyButton" class="copy-button" type="button">Copy text</button>
+      <div class="auto-paste-controls">
+        <label for="autoPasteDelay">Auto paste delay</label>
+        <select id="autoPasteDelay" class="auto-paste-select">
+          <option value="5">5 seconds</option>
+          <option value="10" selected>10 seconds</option>
+          <option value="15">15 seconds</option>
+        </select>
+      </div>
       <p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p>
     </section>
     <section class="keyboard" aria-label="Virtual keyboard">
