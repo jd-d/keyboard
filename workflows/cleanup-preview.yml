@@ -1,0 +1,85 @@
+name: Cleanup PR preview
+
+on:
+  pull_request:
+    types: [ closed ]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Remove preview directory
+        id: remove_preview
+        run: |
+          dir="previews/pr-${{ github.event.number }}"
+          if [ -d "$dir" ]; then
+            git rm -r "$dir"
+            git commit -m "Remove preview for PR #${{ github.event.number }}"
+            git push origin HEAD:gh-pages
+            echo "removed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No preview directory for PR #${{ github.event.number }}"
+            echo "removed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update PR preview comment
+        if: steps.remove_preview.outputs.removed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            if (!prNumber) {
+              core.warning('No pull request number found in context.');
+              return;
+            }
+
+            const dir = `previews/pr-${prNumber}`;
+            const base = `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+            const previewUrl = `${base}/${dir}/`;
+            const removalBody = '🧹 Preview removed after PR was closed. The preview environment has been cleaned up.';
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100
+            });
+
+            const botLogin = 'github-actions[bot]';
+            const existing = comments.find((comment) => {
+              return comment.user?.login === botLogin && comment.body?.includes(previewUrl);
+            });
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: removalBody
+              });
+              core.info(`Updated existing preview comment (${existing.id}) to note removal.`);
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: removalBody
+            });
+            core.info('Created a new comment to note preview removal.');

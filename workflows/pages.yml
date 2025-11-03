@@ -1,0 +1,289 @@
+name: Pages (prod + previews)
+
+on:
+  push:
+    branches:
+      - main
+      - work
+  pull_request_target:
+    branches:
+      - main
+      - work
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v4
+
+      - name: Checkout pull request head
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare site content
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          rsync -a --delete \
+            --exclude '.git/' --exclude '.github/' --exclude 'node_modules/' \
+            --exclude 'dist/' --exclude '*.yml' --exclude '*.yaml' --exclude 'README.md' \
+            ./ dist/
+          touch dist/.nojekyll
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-dist
+          path: dist
+
+  deploy_prod:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+
+      - name: Publish prod to gh-pages root
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: dist
+
+  comment_preview:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    outputs:
+      comment-id:   ${{ steps.preview_comment.outputs.comment-id }}
+      preview-url:  ${{ steps.preview_comment.outputs.preview-url }}
+      preview-dir:  ${{ steps.preview_comment.outputs.preview-dir }}
+      comment-marker: ${{ steps.preview_comment.outputs.comment-marker }}
+    steps:
+      - name: Create new "preparing" comment (per commit)
+        id: preview_comment
+        uses: actions/github-script@v7
+        env:
+          DIR: previews/pr-${{ github.event.number }}
+          SHA: ${{ github.sha }}
+        with:
+          script: |
+            const dir = process.env.DIR;
+            const sha = (process.env.SHA || '').slice(0,7);
+            const base = `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+            const url = `${base}/${dir}/`;
+            const now = new Date().toISOString();
+            const marker = `<!-- preview-dir:${dir} preview-commit:${sha} -->`;
+            const body = `${marker}\u23F3 Preview is preparing (commit ${sha}, ${now}). Will be available at: ${url}`;
+
+            const { data } = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+            core.setOutput('comment-id', String(data.id));
+            core.setOutput('preview-url', url);
+            core.setOutput('preview-dir', dir);
+            core.setOutput('comment-marker', marker);
+
+  deploy_preview:
+    needs: [build, comment_preview]
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+
+      - id: pr
+        run: echo "dir=previews/pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+
+      - name: Publish PR preview to subfolder
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: dist
+          destination_dir: ${{ steps.pr.outputs.dir }}
+
+      - name: Wait for preview deployment
+        id: wait_for_preview
+        uses: actions/github-script@v7
+        env:
+          COMMENT_ID:     ${{ needs.comment_preview.outputs.comment-id }}
+          PREVIEW_URL:    ${{ needs.comment_preview.outputs.preview-url }}
+          PREVIEW_DIR:    ${{ needs.comment_preview.outputs.preview-dir }}
+          COMMENT_MARKER: ${{ needs.comment_preview.outputs.comment-marker }}
+          DELAY_MS: 5000
+          MAX_ATTEMPTS: 60
+        with:
+          script: |
+            const commentId = process.env.COMMENT_ID;
+            const url = process.env.PREVIEW_URL;
+            const dir = process.env.PREVIEW_DIR;
+            const marker = process.env.COMMENT_MARKER || '';
+            if (!commentId || !url || !dir) {
+              core.setFailed('Preview polling is missing required context.');
+              return;
+            }
+
+            const maxAttempts = Number(process.env.MAX_ATTEMPTS) || 20;
+            const delayMs = Number(process.env.DELAY_MS) || 3000;
+            const trimmedDir = dir.replace(/^\/+/, '').replace(/\/+$/, '');
+            const contentPath = `${trimmedDir}/index.html`;
+
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            let attempts = 0;
+            let ready = false;
+            let published = false;
+            let lastError = '';
+
+            const finalize = ({ bodyLine, lastErrorMessage }) => {
+              const finalBody = marker ? `${marker}\n${bodyLine}` : bodyLine;
+
+              core.setOutput('comment-id', commentId);
+              core.setOutput('final-body', finalBody);
+              core.setOutput('ready', ready ? 'true' : 'false');
+              core.setOutput('published', published ? 'true' : 'false');
+              core.setOutput('attempts', String(attempts));
+              if (lastErrorMessage) {
+                core.setOutput('last-error', lastErrorMessage);
+              }
+            };
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              attempts = attempt;
+              let contentReady = false;
+
+              try {
+                await github.rest.repos.getContent({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  path: contentPath,
+                  ref: 'gh-pages'
+                });
+                contentReady = true;
+                published = true;
+                core.info(`Attempt ${attempt}: preview files found on gh-pages.`);
+              } catch (error) {
+                if (error.status === 404) {
+                  core.info(`Attempt ${attempt}: preview files not present yet.`);
+                } else {
+                  const message = error?.message || String(error);
+                  lastError = message;
+                  core.warning(`Attempt ${attempt}: error while checking preview files: ${message}`);
+                }
+              }
+
+              if (contentReady) {
+                try {
+                  const checkUrl = `${url}?nocache=${Date.now()}`;
+                  const response = await fetch(checkUrl, { method: 'GET', redirect: 'follow' });
+                  if (response.ok) {
+                    core.info(`Attempt ${attempt}: preview responded with status ${response.status}.`);
+                    ready = true;
+                    const readyBody = marker
+                      ? `${marker}\n\uD83D\uDD0D Preview ready: ${url}`
+                      : `\uD83D\uDD0D Preview ready: ${url}`;
+                    try {
+                      await github.rest.issues.updateComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        comment_id: Number(commentId),
+                        body: readyBody
+                      });
+                      core.info('Preview comment updated to ready state.');
+                    } catch (updateError) {
+                      const message = updateError?.message || String(updateError);
+                      lastError = message;
+                      core.warning(`Failed to update preview comment when ready: ${message}`);
+                    }
+
+                    finalize({ bodyLine: `\uD83D\uDD0D Preview ready: ${url}`, lastErrorMessage: lastError });
+                    return;
+                  }
+                  core.info(`Attempt ${attempt}: preview responded with status ${response.status}.`);
+                } catch (fetchError) {
+                  const message = fetchError?.message || String(fetchError);
+                  lastError = message;
+                  core.info(`Attempt ${attempt}: preview fetch failed with ${message}.`);
+                }
+              }
+
+              if (attempt < maxAttempts) {
+                await sleep(delayMs);
+              }
+            }
+
+            let bodyLine;
+            if (ready) {
+              bodyLine = `\uD83D\uDD0D Preview ready: ${url}`;
+              core.info(`Preview became available after ${attempts} attempt(s).`);
+            } else if (published) {
+              bodyLine = `\u26A0\uFE0F Preview published but may still be propagating. You can try it here: ${url}`;
+              core.warning(`Preview files published, but HTTP checks did not succeed after ${attempts} attempt(s).`);
+            } else {
+              bodyLine = `\u26A0\uFE0F Preview is still preparing. You can check back soon: ${url}`;
+              core.warning(`Preview was not ready after ${attempts} attempt(s).`);
+            }
+
+            finalize({ bodyLine, lastErrorMessage: lastError });
+
+      - name: Update preview comment with final status
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          COMMENT_ID:   ${{ needs.comment_preview.outputs.comment-id }}
+          FINAL_BODY:   ${{ steps.wait_for_preview.outputs.final-body }}
+          FALLBACK_URL: ${{ needs.comment_preview.outputs.preview-url }}
+          COMMENT_MARKER: ${{ needs.comment_preview.outputs.comment-marker }}
+        with:
+          script: |
+            const commentId = process.env.COMMENT_ID;
+            const fallbackUrl = process.env.FALLBACK_URL;
+            const marker = process.env.COMMENT_MARKER || '';
+            if (!commentId) {
+              core.warning('No preview comment id available. Skipping update.');
+              return;
+            }
+
+            const bodyLine = process.env.FINAL_BODY?.trim()
+              ? process.env.FINAL_BODY
+              : (marker ? `${marker}\n\u26A0\uFE0F Preview is still preparing. You can check back soon: ${fallbackUrl}` : `\u26A0\uFE0F Preview is still preparing. You can check back soon: ${fallbackUrl}`);
+
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: Number(commentId),
+              body: bodyLine
+            });
