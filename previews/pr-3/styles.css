@@ -1,0 +1,222 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Inter", "Segoe UI", Tahoma, sans-serif;
+  --bg-color: #f5f5f7;
+  --panel-color: rgba(255, 255, 255, 0.85);
+  --key-bg: #ffffff;
+  --key-border: #cfd3dc;
+  --key-shadow: rgba(15, 23, 42, 0.1);
+  --accent: #2563eb;
+  --text-color: #0f172a;
+  --muted-text: #475569;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(160deg, #dbeafe, #f8fafc);
+  color: var(--text-color);
+  padding: 1.5rem;
+}
+
+.app {
+  width: min(960px, 100%);
+  background: var(--panel-color);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  box-shadow: 0 24px 48px -24px rgba(15, 23, 42, 0.35);
+  padding: 2rem clamp(1.5rem, 3vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  letter-spacing: 0.03em;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--muted-text);
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+}
+
+.display-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.text-display {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  text-align: center;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(248, 250, 252, 0.7);
+  color: inherit;
+  resize: none;
+  outline: none;
+  min-height: 3.5rem;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.text-display:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.copy-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 12px 24px -12px rgba(37, 99, 235, 0.7);
+}
+
+.copy-button:hover,
+.copy-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px -12px rgba(37, 99, 235, 0.55);
+}
+
+.copy-button:active {
+  transform: translateY(1px);
+}
+
+.copy-status {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.95rem;
+}
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.keyboard-row {
+  display: flex;
+  gap: clamp(0.35rem, 1vw, 0.55rem);
+  justify-content: center;
+}
+
+.key {
+  min-width: 2.6rem;
+  height: 3rem;
+  border-radius: 10px;
+  border: 1px solid var(--key-border);
+  background: var(--key-bg);
+  box-shadow: inset 0 -2px 0 rgba(148, 163, 184, 0.25), 0 6px 12px -6px var(--key-shadow);
+  font-size: 1rem;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.15rem;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(226,232,240,0.85));
+}
+
+.key .shift-char {
+  font-size: 0.6rem;
+  opacity: 0.75;
+  position: absolute;
+  top: 0.2rem;
+  right: 0.35rem;
+}
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 rgba(148, 163, 184, 0.35);
+}
+
+.key.modifier,
+.key.action {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.key.space {
+  min-width: 16rem;
+}
+
+.key.tab,
+.key.caps,
+.key.enter {
+  min-width: 4.5rem;
+}
+
+.key.shift {
+  min-width: 5.5rem;
+}
+
+.key.backspace {
+  min-width: 5.75rem;
+}
+
+.key.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.4);
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+
+  .key {
+    min-width: 2.2rem;
+    height: 2.6rem;
+    font-size: 0.95rem;
+  }
+
+  .key.space {
+    min-width: 12rem;
+  }
+
+  .key.tab,
+  .key.caps,
+  .key.enter {
+    min-width: 3.5rem;
+  }
+
+  .key.shift {
+    min-width: 4rem;
+  }
+
+  .key.backspace {
+    min-width: 4.5rem;
+  }
+}
