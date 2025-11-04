@@ -1,394 +1,387 @@
-const textDisplay = document.getElementById('textDisplay');
-const keyboardContainer = document.querySelector('.keyboard');
-const copyButton = document.getElementById('copyButton');
-const copyStatus = document.getElementById('copyStatus');
-const autoPasteDelaySelect = document.getElementById('autoPasteDelay');
-
 const keyboardLayout = [
   [
-    { type: 'dual', label: '`', value: '`', shift: '~', code: 'Backquote' },
-    { type: 'dual', label: '1', value: '1', shift: '!', code: 'Digit1' },
-    { type: 'dual', label: '2', value: '2', shift: '@', code: 'Digit2' },
-    { type: 'dual', label: '3', value: '3', shift: '#', code: 'Digit3' },
-    { type: 'dual', label: '4', value: '4', shift: '$', code: 'Digit4' },
-    { type: 'dual', label: '5', value: '5', shift: '%', code: 'Digit5' },
-    { type: 'dual', label: '6', value: '6', shift: '^', code: 'Digit6' },
-    { type: 'dual', label: '7', value: '7', shift: '&', code: 'Digit7' },
-    { type: 'dual', label: '8', value: '8', shift: '*', code: 'Digit8' },
-    { type: 'dual', label: '9', value: '9', shift: '(', code: 'Digit9' },
-    { type: 'dual', label: '0', value: '0', shift: ')', code: 'Digit0' },
-    { type: 'dual', label: '-', value: '-', shift: '_', code: 'Minus' },
-    { type: 'dual', label: '=', value: '=', shift: '+', code: 'Equal' },
-    { type: 'action', label: 'Backspace', action: 'backspace', className: 'backspace', code: 'Backspace' }
+    { label: "`", value: "`", shiftValue: "~" },
+    { label: "1", value: "1", shiftValue: "!" },
+    { label: "2", value: "2", shiftValue: "@" },
+    { label: "3", value: "3", shiftValue: "#" },
+    { label: "4", value: "4", shiftValue: "$" },
+    { label: "5", value: "5", shiftValue: "%" },
+    { label: "6", value: "6", shiftValue: "^" },
+    { label: "7", value: "7", shiftValue: "&" },
+    { label: "8", value: "8", shiftValue: "*" },
+    { label: "9", value: "9", shiftValue: "(" },
+    { label: "0", value: "0", shiftValue: ")" },
+    { label: "-", value: "-", shiftValue: "_" },
+    { label: "=", value: "=", shiftValue: "+" },
+    { label: "Backspace", value: "Backspace", type: "action", size: 5, class: "key--wide" }
   ],
   [
-    { type: 'action', label: 'Tab', value: '\t', action: 'tab', className: 'tab', code: 'Tab' },
-    { type: 'letter', label: 'Q', value: 'q', code: 'KeyQ' },
-    { type: 'letter', label: 'W', value: 'w', code: 'KeyW' },
-    { type: 'letter', label: 'E', value: 'e', code: 'KeyE' },
-    { type: 'letter', label: 'R', value: 'r', code: 'KeyR' },
-    { type: 'letter', label: 'T', value: 't', code: 'KeyT' },
-    { type: 'letter', label: 'Y', value: 'y', code: 'KeyY' },
-    { type: 'letter', label: 'U', value: 'u', code: 'KeyU' },
-    { type: 'letter', label: 'I', value: 'i', code: 'KeyI' },
-    { type: 'letter', label: 'O', value: 'o', code: 'KeyO' },
-    { type: 'letter', label: 'P', value: 'p', code: 'KeyP' },
-    { type: 'dual', label: '[', value: '[', shift: '{', code: 'BracketLeft' },
-    { type: 'dual', label: ']', value: ']', shift: '}', code: 'BracketRight' },
-    { type: 'dual', label: '\\', value: '\\', shift: '|', code: 'Backslash' }
+    { label: "Tab", value: "Tab", type: "action", size: 3, class: "key--wide" },
+    { label: "q", value: "q" },
+    { label: "w", value: "w" },
+    { label: "e", value: "e" },
+    { label: "r", value: "r" },
+    { label: "t", value: "t" },
+    { label: "y", value: "y" },
+    { label: "u", value: "u" },
+    { label: "i", value: "i" },
+    { label: "o", value: "o" },
+    { label: "p", value: "p" },
+    { label: "[", value: "[", shiftValue: "{" },
+    { label: "]", value: "]", shiftValue: "}" },
+    { label: "\\", value: "\\", shiftValue: "|", size: 3, class: "key--wide" }
   ],
   [
-    { type: 'action', label: 'Caps', action: 'caps', className: 'caps', code: 'CapsLock' },
-    { type: 'letter', label: 'A', value: 'a', code: 'KeyA' },
-    { type: 'letter', label: 'S', value: 's', code: 'KeyS' },
-    { type: 'letter', label: 'D', value: 'd', code: 'KeyD' },
-    { type: 'letter', label: 'F', value: 'f', code: 'KeyF' },
-    { type: 'letter', label: 'G', value: 'g', code: 'KeyG' },
-    { type: 'letter', label: 'H', value: 'h', code: 'KeyH' },
-    { type: 'letter', label: 'J', value: 'j', code: 'KeyJ' },
-    { type: 'letter', label: 'K', value: 'k', code: 'KeyK' },
-    { type: 'letter', label: 'L', value: 'l', code: 'KeyL' },
-    { type: 'dual', label: ';', value: ';', shift: ':', code: 'Semicolon' },
-    { type: 'dual', label: "'", value: "'", shift: '"', code: 'Quote' },
-    { type: 'action', label: 'Enter', action: 'enter', className: 'enter', code: 'Enter' }
+    { label: "Caps", value: "CapsLock", type: "caps", size: 4, class: "key--wide key--primary" },
+    { label: "a", value: "a" },
+    { label: "s", value: "s" },
+    { label: "d", value: "d" },
+    { label: "f", value: "f" },
+    { label: "g", value: "g" },
+    { label: "h", value: "h" },
+    { label: "j", value: "j" },
+    { label: "k", value: "k" },
+    { label: "l", value: "l" },
+    { label: ";", value: ";", shiftValue: ":" },
+    { label: "'", value: "'", shiftValue: """ },
+    { label: "Enter", value: "Enter", type: "action", size: 6, class: "key--wide" }
   ],
   [
-    { type: 'action', label: 'Shift', action: 'shift', className: 'shift', code: 'ShiftLeft' },
-    { type: 'letter', label: 'Z', value: 'z', code: 'KeyZ' },
-    { type: 'letter', label: 'X', value: 'x', code: 'KeyX' },
-    { type: 'letter', label: 'C', value: 'c', code: 'KeyC' },
-    { type: 'letter', label: 'V', value: 'v', code: 'KeyV' },
-    { type: 'letter', label: 'B', value: 'b', code: 'KeyB' },
-    { type: 'letter', label: 'N', value: 'n', code: 'KeyN' },
-    { type: 'letter', label: 'M', value: 'm', code: 'KeyM' },
-    { type: 'dual', label: ',', value: ',', shift: '<', code: 'Comma' },
-    { type: 'dual', label: '.', value: '.', shift: '>', code: 'Period' },
-    { type: 'dual', label: '/', value: '/', shift: '?', code: 'Slash' },
-    { type: 'action', label: 'Shift', action: 'shift', className: 'shift', code: 'ShiftRight' }
+    { label: "Shift", value: "Shift", type: "shift", size: 6, class: "key--wide key--primary" },
+    { label: "z", value: "z" },
+    { label: "x", value: "x" },
+    { label: "c", value: "c" },
+    { label: "v", value: "v" },
+    { label: "b", value: "b" },
+    { label: "n", value: "n" },
+    { label: "m", value: "m" },
+    { label: ",", value: ",", shiftValue: "<" },
+    { label: ".", value: ".", shiftValue: ">" },
+    { label: "/", value: "/", shiftValue: "?" },
+    { label: "Shift", value: "Shift", type: "shift", size: 7, class: "key--wide key--primary" }
   ],
   [
-    { type: 'modifier', label: 'Ctrl', action: 'ctrl', className: 'ctrl', code: 'ControlLeft' },
-    { type: 'modifier', label: 'Alt', action: 'alt', className: 'alt', code: 'AltLeft' },
-    { type: 'modifier', label: 'Cmd', action: 'meta', className: 'cmd', code: 'MetaLeft' },
-    { type: 'action', label: '', value: ' ', action: 'space', className: 'space', code: 'Space' },
-    { type: 'modifier', label: 'Cmd', action: 'meta', className: 'cmd', code: 'MetaRight' },
-    { type: 'modifier', label: 'Alt', action: 'alt', className: 'alt', code: 'AltRight' },
-    { type: 'modifier', label: 'Ctrl', action: 'ctrl', className: 'ctrl', code: 'ControlRight' }
+    { label: "Copy", value: "Copy", type: "copy", size: 4, class: "key--wide key--primary" },
+    { label: "Ctrl", value: "Ctrl", type: "noop", size: 4, class: "key--wide" },
+    { label: "Alt", value: "Alt", type: "noop", size: 4, class: "key--wide" },
+    { label: "Space", value: "Space", type: "space", size: 10, class: "key--wide" },
+    { label: "Paste", value: "Paste", type: "paste", size: 4, class: "key--wide key--primary" }
   ]
 ];
 
-const keyElements = new Map();
-let shiftActive = false;
-let capsActive = false;
-let autoPasteTimeoutId;
-let lastCopiedText = '';
+const input = document.getElementById("virtual-input");
+const keyboard = document.getElementById("keyboard");
+const copyButton = document.getElementById("copy-button");
+const statusMessage = document.getElementById("status-message");
+const zoomSlider = document.getElementById("zoom-slider");
 
-function renderKeyboard() {
-  keyboardContainer.innerHTML = '';
-  keyboardLayout.forEach(row => {
-    const rowElement = document.createElement('div');
-    rowElement.className = 'keyboard-row';
+const AUTO_PASTE_DELAY_MS = 10000;
 
-    row.forEach(key => {
-      const keyElement = document.createElement('button');
-      keyElement.type = 'button';
-      keyElement.classList.add('key');
-      keyElement.dataset.code = key.code;
+const setKeyScale = (scale) => {
+  const clamped = Math.min(1.5, Math.max(0.5, scale));
+  document.documentElement.style.setProperty("--key-scale", String(clamped));
+};
 
-      if (key.className) {
-        keyElement.classList.add(key.className);
+const state = {
+  shift: false,
+  caps: false,
+  autoPasteTimeout: null,
+  lastCopiedText: ""
+};
+
+const shiftKeys = [];
+const capsKeys = [];
+
+const createKeyElement = (keyData) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.classList.add("key");
+
+  if (keyData.class) {
+    keyData.class.split(" ").forEach((className) => {
+      if (className.trim()) {
+        button.classList.add(className.trim());
       }
+    });
+  }
 
-      if (key.type === 'dual') {
-        keyElement.innerHTML = `
-          <span class="primary">${key.label}</span>
-          <span class="shift-char">${key.shift}</span>
-        `;
-      } else {
-        keyElement.textContent = key.label || key.value || '';
-      }
+  if (keyData.size) {
+    button.dataset.size = keyData.size;
+  }
 
-      if (key.type === 'action' || key.type === 'modifier') {
-        keyElement.classList.add('modifier');
-      }
+  if (keyData.shiftValue) {
+    const shifted = document.createElement("span");
+    shifted.className = "key__shifted";
+    shifted.textContent = keyData.shiftValue;
+    button.appendChild(shifted);
+  }
 
-      keyElement.addEventListener('click', () => {
-        handleVirtualKeyPress(key);
-        highlightKey(key.code);
-        setTimeout(() => unhighlightKey(key.code), 150);
-      });
+  const mainLabel = document.createElement("span");
+  mainLabel.textContent = keyData.label;
+  button.appendChild(mainLabel);
 
+  if (keyData.type === "shift") {
+    shiftKeys.push(button);
+  }
+
+  if (keyData.type === "caps") {
+    capsKeys.push(button);
+  }
+
+  button.addEventListener("click", () => handleKeyPress(keyData));
+  return button;
+};
+
+const renderKeyboard = () => {
+  keyboardLayout.forEach((row) => {
+    const rowElement = document.createElement("div");
+    rowElement.className = "keyboard__row";
+
+    row.forEach((keyData) => {
+      const keyElement = createKeyElement(keyData);
       rowElement.appendChild(keyElement);
-      keyElements.set(key.code, keyElement);
     });
 
-    keyboardContainer.appendChild(rowElement);
+    keyboard.appendChild(rowElement);
   });
-}
+};
 
-function handleVirtualKeyPress(key) {
-  switch (key.action) {
-    case 'backspace':
-      removeCharacter();
-      break;
-    case 'tab':
-      insertCharacter('\t');
-      break;
-    case 'enter':
-      insertCharacter('\n');
-      break;
-    case 'space':
-      insertCharacter(' ');
-      break;
-    case 'shift':
-      toggleShift();
-      break;
-    case 'caps':
-      toggleCaps();
-      break;
-    default:
-      if (key.type === 'letter' || key.type === 'dual') {
-        insertFromKey(key);
+const updateStatus = (message, timeout = 2500) => {
+  statusMessage.textContent = message;
+  if (timeout) {
+    window.clearTimeout(statusMessage.dataset.timeoutId);
+    const id = window.setTimeout(() => {
+      statusMessage.textContent = "";
+      delete statusMessage.dataset.timeoutId;
+    }, timeout);
+    statusMessage.dataset.timeoutId = id;
+  }
+};
+
+const insertCharacter = (character) => {
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const before = input.value.slice(0, start);
+  const after = input.value.slice(end);
+  input.value = `${before}${character}${after}`;
+  const newPosition = start + character.length;
+  input.setSelectionRange(newPosition, newPosition);
+};
+
+const resolveCharacter = (keyData) => {
+  const isLetter = /^[a-z]$/i.test(keyData.value);
+
+  if (isLetter) {
+    const shouldUppercase = state.shift !== state.caps;
+    const char = shouldUppercase ? keyData.value.toUpperCase() : keyData.value.toLowerCase();
+    return char;
+  }
+
+  if (state.shift && keyData.shiftValue) {
+    return keyData.shiftValue;
+  }
+
+  return keyData.value;
+};
+
+const setShift = (on) => {
+  state.shift = on;
+  shiftKeys.forEach((button) => {
+    button.classList.toggle("is-active", on);
+  });
+};
+
+const toggleCaps = () => {
+  state.caps = !state.caps;
+  capsKeys.forEach((button) => {
+    button.classList.toggle("is-active", state.caps);
+  });
+};
+
+const handleKeyPress = (keyData) => {
+  switch (keyData.type) {
+    case "action":
+      if (keyData.value === "Backspace") {
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+
+        if (start === end && start > 0) {
+          input.value = `${input.value.slice(0, start - 1)}${input.value.slice(end)}`;
+          const newPosition = start - 1;
+          input.setSelectionRange(newPosition, newPosition);
+        } else if (start !== end) {
+          input.value = `${input.value.slice(0, start)}${input.value.slice(end)}`;
+          input.setSelectionRange(start, start);
+        }
+      }
+
+      if (keyData.value === "Enter") {
+        updateStatus("Enter is not available on the single line field.");
+      }
+
+      if (keyData.value === "Tab") {
+        insertCharacter("    ");
       }
       break;
-  }
-}
 
-function insertFromKey(key) {
-  let character = key.value;
+    case "shift":
+      setShift(!state.shift);
+      return;
 
-  if (key.type === 'letter') {
-    if (shiftActive !== capsActive) {
-      character = character.toUpperCase();
+    case "caps":
+      toggleCaps();
+      return;
+
+    case "space":
+      insertCharacter(" ");
+      break;
+
+    case "copy":
+      handleCopy();
+      break;
+
+    case "paste":
+      updateStatus(`Will paste clipboard in ${AUTO_PASTE_DELAY_MS / 1000} seconds...`);
+      scheduleAutoPaste();
+      break;
+
+    case "noop":
+      updateStatus(`${keyData.label} is disabled on the virtual keyboard.`);
+      break;
+
+    default: {
+      const char = resolveCharacter(keyData);
+      insertCharacter(char);
+      break;
     }
-  } else if (key.type === 'dual') {
-    character = shiftActive ? key.shift : key.value;
   }
 
-  insertCharacter(character);
-
-  if (shiftActive) {
+  if (state.shift && keyData.type !== "shift") {
     setShift(false);
   }
-}
+};
 
-function insertCharacter(char) {
-  textDisplay.value += char;
-  textDisplay.focus();
-  textDisplay.scrollTop = textDisplay.scrollHeight;
-}
-
-function removeCharacter() {
-  textDisplay.value = textDisplay.value.slice(0, -1);
-  textDisplay.focus();
-}
-
-function toggleShift() {
-  setShift(!shiftActive);
-}
-
-function setShift(state) {
-  shiftActive = state;
-  updateShiftKeys();
-}
-
-function updateShiftKeys() {
-  ['ShiftLeft', 'ShiftRight'].forEach(code => {
-    const key = keyElements.get(code);
-    if (!key) return;
-    key.classList.toggle('active', shiftActive);
-  });
-}
-
-function toggleCaps() {
-  capsActive = !capsActive;
-  const capsKey = keyElements.get('CapsLock');
-  if (capsKey) {
-    capsKey.classList.toggle('active', capsActive);
-  }
-}
-
-function highlightKey(code) {
-  const key = keyElements.get(code);
-  if (key) {
-    key.classList.add('active');
-  }
-}
-
-function unhighlightKey(code) {
-  const key = keyElements.get(code);
-  if (key && !shouldStayActive(code)) {
-    key.classList.remove('active');
-  }
-}
-
-function shouldStayActive(code) {
-  if (code === 'CapsLock') {
-    return capsActive;
-  }
-  if (code === 'ShiftLeft' || code === 'ShiftRight') {
-    return shiftActive;
-  }
-  return false;
-}
-
-function handlePhysicalKeyDown(event) {
-  if (!keyElements.has(event.code)) {
+const handleCopy = async () => {
+  if (!navigator.clipboard) {
+    updateStatus("Clipboard access is unavailable in this browser.");
     return;
   }
 
-  if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+  const start = input.selectionStart ?? 0;
+  const end = input.selectionEnd ?? 0;
+  const hasSelection = end > start;
+  const textToCopy = hasSelection ? input.value.slice(start, end) : input.value;
+
+  if (!textToCopy) {
+    updateStatus("Nothing to copy.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    state.lastCopiedText = textToCopy;
+    updateStatus(hasSelection ? "Copied selection to clipboard." : "Copied all text to clipboard.");
+  } catch (error) {
+    console.error("Failed to copy", error);
+    updateStatus("Clipboard permissions are required for copy.");
+  }
+};
+
+const scheduleAutoPaste = () => {
+  if (!navigator.clipboard) {
+    updateStatus("Clipboard access is unavailable for paste.");
+    return;
+  }
+
+  if (state.autoPasteTimeout) {
+    window.clearTimeout(state.autoPasteTimeout);
+  }
+
+  state.autoPasteTimeout = window.setTimeout(async () => {
+    if (!navigator.clipboard.readText) {
+      updateStatus("Auto paste is not supported by this browser.");
+      return;
+    }
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText) {
+        updateStatus("Clipboard is empty.");
+        return;
+      }
+      insertCharacter(clipboardText);
+      updateStatus("Pasted clipboard contents.");
+    } catch (error) {
+      console.error("Auto paste failed", error);
+      updateStatus("Auto paste needs additional browser permission.");
+    }
+  }, AUTO_PASTE_DELAY_MS);
+};
+
+const handlePhysicalKey = (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    return;
+  }
+
+  const key = event.key;
+
+  const specialKeyMap = {
+    Backspace: "Backspace",
+    Enter: "Enter",
+    Tab: "Tab",
+    CapsLock: "CapsLock",
+    Shift: "Shift",
+    " ": "Space"
+  };
+
+  if (specialKeyMap[key]) {
+    if (key === "Shift") {
+      setShift(true);
+    }
+    handleKeyPress({ type: "action", value: specialKeyMap[key] });
+    event.preventDefault();
+    return;
+  }
+
+  const isPrintable = key.length === 1;
+  if (!isPrintable) {
+    return;
+  }
+
+  const lowerKey = key.toLowerCase();
+  const simulated = { type: "char", value: lowerKey };
+
+  if (event.shiftKey) {
     setShift(true);
   }
 
-  if (event.code === 'CapsLock') {
-    toggleCaps();
-    return;
-  }
+  handleKeyPress(simulated);
+};
 
-  if (event.repeat && event.code !== 'Backspace') {
-    event.preventDefault();
-  }
-
-  event.preventDefault();
-  const key = findKeyByCode(event.code);
-  if (key) {
-    handleVirtualKeyPress(key);
-    highlightKey(event.code);
-  }
-}
-
-function handlePhysicalKeyUp(event) {
-  if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+const handlePhysicalKeyUp = (event) => {
+  if (event.key === "Shift") {
     setShift(false);
   }
-  unhighlightKey(event.code);
-}
+};
 
-function findKeyByCode(code) {
-  for (const row of keyboardLayout) {
-    for (const key of row) {
-      if (key.code === code) {
-        return key;
-      }
+if (zoomSlider) {
+  const initialScale = parseFloat(zoomSlider.value);
+  if (!Number.isNaN(initialScale)) {
+    setKeyScale(initialScale);
+  } else {
+    setKeyScale(1);
+  }
+
+  zoomSlider.addEventListener("input", (event) => {
+    const value = parseFloat(event.target.value);
+    if (!Number.isNaN(value)) {
+      setKeyScale(value);
     }
-  }
-  return null;
-}
-
-copyButton.addEventListener('click', async () => {
-  const text = textDisplay.value;
-  if (!text) {
-    copyStatus.textContent = 'Nothing to copy yet - try typing first.';
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(text);
-    lastCopiedText = text;
-    showCopyFeedback(true);
-  } catch (error) {
-    legacyCopy(text);
-  }
-});
-
-function legacyCopy(text) {
-  const wasReadOnly = textDisplay.hasAttribute('readonly');
-  if (wasReadOnly) {
-    textDisplay.removeAttribute('readonly');
-  }
-  textDisplay.select();
-  textDisplay.setSelectionRange(0, textDisplay.value.length);
-
-  try {
-    const success = document.execCommand('copy');
-    if (success) {
-      lastCopiedText = text;
-    }
-    showCopyFeedback(success);
-  } catch (error) {
-    showCopyFeedback(false);
-  }
-
-  textDisplay.setSelectionRange(textDisplay.value.length, textDisplay.value.length);
-  if (wasReadOnly) {
-    textDisplay.setAttribute('readonly', '');
-  }
-  textDisplay.blur();
-}
-
-function getSelectedDelaySeconds() {
-  const fallback = 10;
-  if (!autoPasteDelaySelect) {
-    return fallback;
-  }
-
-  const parsed = parseInt(autoPasteDelaySelect.value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
-  }
-
-  return parsed;
-}
-
-function showCopyFeedback(success) {
-  window.clearTimeout(autoPasteTimeoutId);
-
-  if (!success) {
-    copyStatus.textContent = 'Your browser blocked automatic copy. Use Ctrl+C / Cmd+C.';
-    return;
-  }
-
-  const delaySeconds = getSelectedDelaySeconds();
-  copyStatus.textContent = `Copied! We'll attempt to auto paste in ${delaySeconds} seconds (clipboard permission required).`;
-  scheduleAutoPaste(delaySeconds);
-}
-
-function scheduleAutoPaste(delaySeconds) {
-  window.clearTimeout(autoPasteTimeoutId);
-
-  if (!lastCopiedText) {
-    return;
-  }
-
-  if (!Number.isFinite(delaySeconds) || delaySeconds <= 0) {
-    return;
-  }
-
-  autoPasteTimeoutId = window.setTimeout(async () => {
-    try {
-      if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
-        copyStatus.textContent = 'Auto paste is unavailable because clipboard read access is not supported here. Paste manually with Ctrl+V / Cmd+V.';
-        return;
-      }
-
-      const clipboardText = await navigator.clipboard.readText();
-
-      if (!clipboardText) {
-        copyStatus.textContent = 'Auto paste ran, but the clipboard was empty. Paste manually if needed.';
-        return;
-      }
-
-      insertCharacter(clipboardText);
-      try {
-        textDisplay.selectionStart = textDisplay.selectionEnd = textDisplay.value.length;
-      } catch (selectionError) {
-        // Ignore selection adjustment failures on read-only fields.
-      }
-      copyStatus.textContent = 'Auto paste inserted the copied text above. Allow clipboard access if your browser prompts you.';
-    } catch (error) {
-      console.error('Auto paste failed', error);
-      copyStatus.textContent = 'Auto paste was blocked by browser security settings. Paste manually with Ctrl+V / Cmd+V.';
-    } finally {
-      autoPasteTimeoutId = undefined;
-    }
-  }, delaySeconds * 1000);
+  });
 }
 
 renderKeyboard();
-textDisplay.addEventListener('focus', () => {
-  textDisplay.selectionStart = textDisplay.selectionEnd = textDisplay.value.length;
-});
-
-document.addEventListener('keydown', handlePhysicalKeyDown);
-document.addEventListener('keyup', handlePhysicalKeyUp);
+copyButton.addEventListener("click", handleCopy);
+document.addEventListener("keydown", handlePhysicalKey);
+document.addEventListener("keyup", handlePhysicalKeyUp);
+input.focus();
