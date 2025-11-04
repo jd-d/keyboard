@@ -7,8 +7,7 @@ on:
       - work
   pull_request_target:
     branches:
-      - main
-      - work
+      - '**'
   workflow_dispatch:
 
 concurrency:
